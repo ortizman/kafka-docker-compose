@@ -33,6 +33,10 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_JMX_PORT: 9101
       KAFKA_JMX_HOSTNAME: localhost
+    deploy:
+      resources:
+        limits:
+          memory: 1Gb
 
   connect:
     image: ortizman/mysql-connect:1.0.2
@@ -58,6 +62,10 @@ services:
       CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
       CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
       CONNECT_LOG4J_LOGGERS: org.apache.zookeeper=ERROR,org.I0Itec.zkclient=ERROR,org.reflections=ERROR
+    deploy:
+      resources:
+        limits:
+          memory: 2Gb
 
   ksqldb-server:
     image: confluentinc/cp-ksqldb-server:6.1.0
@@ -87,9 +95,5 @@ services:
   ksqldb-cli:
     image: confluentinc/cp-ksqldb-cli:6.1.0
     container_name: ksqldb-cli
-    depends_on:
-      - broker
-      - connect
-      - ksqldb-server
     entrypoint: /bin/sh
     tty: true
