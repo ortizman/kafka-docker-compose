@@ -21,14 +21,86 @@
     docker build . -t mysql-connect:1.0.2
     ```
 
-·
-# Crear el conector usando KSQLDB
+
+# Deployment
+
+## Local
+
+Todos los servicios estan construidos sobre Docker. Usando la herramienta docker-compose se puede levantar un ambiente local (o en cualquier servidor con docker).
+
+### Levantar todos los servicios
+
+```shell
+docker-compose --context default up -d
+```
+
+### Bajar todos los servicios
+
+```shell
+docker-compose --context default  down
+```
+## AWS ECS
+Existe la posibilidad de deployar estos servicios usando ECS como plataforma. Los siguientes links pueden servir de guia para cumplir los pre-requisitos:
+* https://docs.docker.com/cloud/ecs-integration/
+* https://aws.amazon.com/blogs/containers/deploy-applications-on-amazon-ecs-using-docker-compose/
+
+A continuación se explican muy brevemente los pasos a seguir para deployar sobre AWS ECS.
+
+### Crear un nuevo contexto en Docker
+```shell
+docker context create ecs aws-ecs
+```
+
+El comando anterior mostrará un menú similiar al siguiente:
+
+```shell
+? Create a Docker context using:  [Use arrows to move, type to filter]
+  An existing AWS profile
+  AWS secret and token credentials
+> AWS environment variables
+```
+
+donde se debe seleccionar el modo en que se proveerá las cerdenciales de AWS.
+
+
+### Desplegar los servicios
+
+De forma similar a como se opera con el comando docker-compose, se puede desplegar usando el comando __ docker compose __. A continuación un ejemplo:
+
+```shell
+docker compose --context aws-ecs up connect
+```
+
+El comando anterior creará un nuevo cluster (si ya no existe) y desplegará el container `connect` con todas sus dependencias usando AWS ECS.
+
+### Chequear los servicios levantados
+
+```shell
+docker compose --context aws-ecs ps
+```
+
+### Visualizar logs
+
+```shell
+docker compose --context aws-ecs logs connect
+```
+
+### Eliminar los servicios
+
+```shell
+docker compose --context aws-ecs down
+```
+
+---
+# Crear un conector usando KSQLDB
 Iniciar el cliente de ksqldb
 ```shell
 docker-compose -f docker-compose-cp-community.yml exec ksqldb-cli ksql http://ksqldb-server:8088
 ```
 
 # Demo
+
+Se creará una base de datos con una tabla y datos mocks. Se extraeran los datos de esa tabla usando el conector JDBC de Kafka Connect y se enviara a un tópico. Luego, usando una expresion SQL en KSQLDB se transforaran los datos para posteriormente ser escritos en otro topico. Nuevamente, usando un conector de salida, se consumieran esos datos para escribirlos en influxdb y usar Grafana para crear nuestro dashboard.
 
 ## Crear Base de datos relacional de ejemplo
 
@@ -76,17 +148,21 @@ INSERT INTO `user` (created_date,dni,due_change_password,email,enable,first_name
 CREATE SOURCE CONNECTOR `jdbc-connector` WITH("connector.class"='io.confluent.connect.jdbc.JdbcSourceConnector', "connection.url"='jdbc:mysql://192.168.1.121:3306/iplycdb', "mode"='incrementing', "topic.prefix"='jdbc-', "table.whitelist"='user', "key"='email', "connection.user"='iplyc-user-db', "connection.password"='' );
 ```
 
-Chequear el nuevo topico
+### Chequear el nuevo topico
 ```shell
-print 'topic-name' from beginning;
+print 'jdbc-user' from beginning;
 ```
 
-Dropear un connector
+
+## Comandos útiles
+
+### Dropear un connector
 ```shell
-drop connector 'topic-name';
+drop connector 'jdbc-user';
 ```
 
-Parar todos los servicios
+### Stopear todos los servicios
 ```shell
 docker-compose -f docker-compose-cp-community.yml down
 ```
+
