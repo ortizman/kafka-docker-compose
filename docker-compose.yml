@@ -112,3 +112,50 @@ services:
     environment: 
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "broker:29092"
       KAFKA_CLUSTERS_0_NAME: local
+
+  influxdb:
+    image: influxdb:1.8-alpine
+    container_name: influxdb
+    ports:
+      - '8086:8086'
+    volumes:
+      - influxdb-storage:/var/lib/influxdb
+    env_file: 
+      - 'env.influxdb'
+    profiles:
+      - warehouse
+      
+  chronograf:
+    image: chronograf:1.8-alpine
+    ports:
+      - '127.0.0.1:8888:8888'
+    volumes:
+      - chronograf-storage:/var/lib/chronograf
+    depends_on:
+      - influxdb
+    environment:
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_USERNAME=${INFLUXDB_USERNAME}
+      - INFLUXDB_PASSWORD=${INFLUXDB_PASSWORD}
+    profiles:
+      - warehouse
+
+  grafana:
+    image: grafana/grafana:7.4.3
+    container_name: grafana
+    ports:
+      - '3000:3000'
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./grafana-provisioning/:/etc/grafana/provisioning
+    depends_on:
+      - influxdb
+    env_file: 
+      - 'env.grafana'
+    profiles:
+      - warehouse
+
+volumes:
+  influxdb-storage:
+  chronograf-storage:
+  grafana-storage:
