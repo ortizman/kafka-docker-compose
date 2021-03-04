@@ -68,10 +68,10 @@ donde se debe seleccionar el modo en que se proveerá las cerdenciales de AWS.
 De forma similar a como se opera con el comando docker-compose, se puede desplegar usando el comando __ docker compose __. A continuación un ejemplo:
 
 ```shell
-docker compose --context aws-ecs up connect
+docker compose --context aws-ecs up connect 
 ```
 
-El comando anterior creará un nuevo cluster (si ya no existe) y desplegará el container `connect` con todas sus dependencias usando AWS ECS.
+El comando anterior creará un nuevo cluster (si ya no existe) y desplegará el container `connect` con todas sus dependencias (Kafka Broker y Zookeeper) usando AWS ECS.
 
 ### Chequear los servicios levantados
 
