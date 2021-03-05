@@ -10,6 +10,9 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    profiles:
+      - datalake
+      - all
 
   broker:
     image: confluentinc/cp-kafka:6.1.0
@@ -38,9 +41,12 @@ services:
         limits:
           cpus: '0.50'
           memory: 1Gb
+    profiles:
+      - datalake
+      - all
 
   connect:
-    image: ortizman/kafka-connect:1.1.0
+    image: ortizman/kafka-connect:1.2.0
     hostname: connect
     container_name: connect
     depends_on:
@@ -68,6 +74,9 @@ services:
         limits:
           cpus: '0.50'
           memory: 1Gb
+    profiles:
+      - datalake
+      - all
 
   ksqldb-server:
     image: confluentinc/cp-ksqldb-server:6.1.0
@@ -93,6 +102,9 @@ services:
       KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE: 'false'
       KSQL_OPTS: "-Dconfluent.support.metrics.enable=false"
       KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: 'true'
+    profiles:
+      - datalake
+      - all
 
   ksqldb-cli:
     image: confluentinc/cp-ksqldb-cli:6.1.0
@@ -103,6 +115,9 @@ services:
       - ksqldb-server
     entrypoint: /bin/sh
     tty: true
+    profiles:
+      - ksqldb-cli
+      - all
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -112,6 +127,9 @@ services:
     environment: 
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "broker:29092"
       KAFKA_CLUSTERS_0_NAME: local
+    profiles:
+      - kafka-ui
+      - all
 
   influxdb:
     image: influxdb:1.8-alpine
@@ -121,12 +139,14 @@ services:
     volumes:
       - influxdb-storage:/var/lib/influxdb
     env_file: 
-      - 'env.influxdb'
+      - 'warehouse/env.influxdb'
     profiles:
       - warehouse
+      - all
       
   chronograf:
     image: chronograf:1.8-alpine
+    container_name: chronograf
     ports:
       - '127.0.0.1:8888:8888'
     volumes:
@@ -134,11 +154,12 @@ services:
     depends_on:
       - influxdb
     environment:
-      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_URL=${INFLUXDB_URL}
       - INFLUXDB_USERNAME=${INFLUXDB_USERNAME}
       - INFLUXDB_PASSWORD=${INFLUXDB_PASSWORD}
     profiles:
       - warehouse
+      - all
 
   grafana:
     image: grafana/grafana:7.4.3
@@ -147,13 +168,14 @@ services:
       - '3000:3000'
     volumes:
       - grafana-storage:/var/lib/grafana
-      - ./grafana-provisioning/:/etc/grafana/provisioning
+      - ./warehouse/grafana-provisioning/:/etc/grafana/provisioning
     depends_on:
       - influxdb
     env_file: 
-      - 'env.grafana'
+      - 'warehouse/env.grafana'
     profiles:
       - warehouse
+      - all
 
 volumes:
   influxdb-storage:
