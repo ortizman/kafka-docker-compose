@@ -31,13 +31,13 @@ Todos los servicios estan construidos sobre Docker. Usando la herramienta docker
 ### Levantar todos los servicios
 
 ```shell
-docker-compose --context default up -d
+docker-compose --context default --profile datalake up -d
 ```
 
 ### Bajar todos los servicios
 
 ```shell
-docker-compose --context default  down
+docker-compose --context default down
 ```
 ## AWS ECS
 Existe la posibilidad de deployar estos servicios usando ECS como plataforma. Los siguientes links pueden servir de guia para cumplir los pre-requisitos:
@@ -145,14 +145,30 @@ INSERT INTO `user` (created_date,dni,due_change_password,email,enable,first_name
 
 ## Crear el connector MySQL >> Connector >> Kafka 
 ```sql
-CREATE SOURCE CONNECTOR `jdbc-connector` WITH("connector.class"='io.confluent.connect.jdbc.JdbcSourceConnector', "connection.url"='jdbc:mysql://192.168.1.121:3306/iplycdb', "mode"='incrementing', "topic.prefix"='jdbc-', "table.whitelist"='user', "key"='email', "connection.user"='iplyc-user-db', "connection.password"='' );
+CREATE SOURCE CONNECTOR `jdbc-connector` WITH("connector.class"='io.confluent.connect.jdbc.JdbcSourceConnector', "connection.url"='jdbc:mysql://172.17.0.1:3306/ptsmock', "mode"='incrementing', "topic.prefix"='jdbc_', "table.whitelist"='user', "key"='email', "connection.user"='ptsmock', "connection.password"='' );
 ```
+> Para connectarse al ksqldb-cli con docker se puede usar el siguiente comando: 
+``` docker-compose exec ksqldb-cli ksql http://ksqldb-server:8088 ```
 
 ### Chequear el nuevo topico
 ```shell
 print 'jdbc-user' from beginning;
 ```
 
+## Crear un conector de salida para influxdb
+```sql
+CREATE SINK CONNECTOR SINK_INFLUX_01 WITH (
+        'connector.class'               = 'io.confluent.influxdb.InfluxDBSinkConnector',
+        'value.converter'               = 'org.apache.kafka.connect.json.JsonConverter',
+        'topics'                        = 'parser_user_schema',
+        'influxdb.url'                  = 'http://influxdb:8086',
+        'influxdb.db'                   = 'adaptor_pts',
+        'measurement.name.format'       = 'metrics',
+        'key.converter.schemas.enable'  = 'false',
+        'value.converter.schemas.enable'= 'true',
+        'schemas.enable'                = 'false'
+  );
+```
 
 ## Comandos útiles
 
