@@ -111,74 +111,76 @@ CREATE DATABASE `ptsmock` /*!40100 DEFAULT CHARACTER SET utf8 */;
 
 ### DDL Tabla de usuarios
 ```sql
-CREATE TABLE `user` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `created_date` datetime(6) DEFAULT NULL,
-  `dni` varchar(255) DEFAULT NULL,
-  `due_change_password` bit(1) DEFAULT NULL,
-  `email` varchar(255) NOT NULL,
-  `enable` bit(1) NOT NULL,
-  `first_name` varchar(255) DEFAULT NULL,
-  `last_name` varchar(255) DEFAULT NULL,
-  `password` varchar(255) DEFAULT NULL,
-  `phone` varchar(255) DEFAULT NULL,
+CREATE TABLE `transactions` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `beneficiaryId` bigint NOT NULL,
+  `originId` bigint DEFAULT NULL,
+  `amount` bigint NOT NULL,
+  `status` varchar(100) DEFAULT NULL,
+  `creationDate` datetime DEFAULT NULL,
+  `serviceId` bigint DEFAULT NULL,
+  `channelId` bigint DEFAULT NULL,
+  `reference` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`),
-  UNIQUE KEY `dni` (`dni`)
-) ENGINE=InnoDB AUTO_INCREMENT=706 DEFAULT CHARSET=utf8;
+  UNIQUE KEY `transactions_ID_IDX` (`id`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8;
 ```
 
 ### Insert de datos
 ```sql
-INSERT INTO `user` (created_date,dni,due_change_password,email,enable,first_name,last_name,password,phone) VALUES
-	 ('2020-01-21 00:00:00.0','32345100',0,'admin@yopmail.com',1,'Admin','Admin','$2a$10$oAgHnrcXV4zf4pWacGh75O1c8FVv.Kw8p0qSWqML3/5.5g9hxCh8q',NULL),
-	 ('2020-03-21 00:00:00.0','32345200',0,'usuario00@yopmail.com',1,'usuario 00','Prueba 00','$2a$10$oAgHnrcXV4zf4pWacGh75O1c8FVv.Kw8p0qSWqML3/5.5g9hxCh8q',NULL),
-	 ('2020-03-21 00:00:00.0','32345201',0,'usuario01@yopmail.com',1,'usuario 01','Prueba 01','$2a$10$oAgHnrcXV4zf4pWacGh75O1c8FVv.Kw8p0qSWqML3/5.5g9hxCh8q',NULL),
-	 ('2020-03-21 00:00:00.0','32345202',0,'usuario02@yopmail.com',1,'usuario 02','Prueba 02','$2a$10$oAgHnrcXV4zf4pWacGh75O1c8FVv.Kw8p0qSWqML3/5.5g9hxCh8q',NULL),
-	 ('2020-04-21 00:00:00.0','32345300',0,'usuario03@yopmail.com',1,'usuario 00','Prueba 00','$2a$10$oAgHnrcXV4zf4pWacGh75O1c8FVv.Kw8p0qSWqML3/5.5g9hxCh8q',NULL),
-	 ('2020-04-21 00:00:00.0','32345301',0,'usuario04@yopmail.com',1,'usuario 01','Prueba 01','$2a$10$oAgHnrcXV4zf4pWacGh75O1c8FVv.Kw8p0qSWqML3/5.5g9hxCh8q',NULL),
-	 ('2020-04-21 00:00:00.0','32345302',0,'usuario05@yopmail.com',1,'usuario 02','Prueba 02','$2a$10$oAgHnrcXV4zf4pWacGh75O1c8FVv.Kw8p0qSWqML3/5.5g9hxCh8q',NULL),
-	 ('2020-04-21 00:00:00.0','32345303',0,'usuario06@yopmail.com',1,'usuario 03','Prueba 03','$2a$10$oAgHnrcXV4zf4pWacGh75O1c8FVv.Kw8p0qSWqML3/5.5g9hxCh8q',NULL),
-	 ('2020-04-21 00:00:00.0','32345304',0,'usuario07@yopmail.com',1,'usuario 04','Prueba 04','$2a$10$oAgHnrcXV4zf4pWacGh75O1c8FVv.Kw8p0qSWqML3/5.5g9hxCh8q',NULL),
-	 ('2020-04-21 00:00:00.0','32345305',0,'usuario08@yopmail.com',1,'usuario 05','Prueba 05','$2a$10$oAgHnrcXV4zf4pWacGh75O1c8FVv.Kw8p0qSWqML3/5.5g9hxCh8q',NULL);
+INSERT INTO ptsmock.transactions (beneficiaryId,originId,amount,status,creationDate,serviceId,channelId,reference) VALUES
+	 (101,200,100,'PENDING','2021-03-05 12:57:06.0',3,4,'Prueba'),
+	 (102,201,400,'PENDING','2021-03-05 12:57:07.0',3,4,'Prueba'),
+	 (101,202,1000,'PENDING','2021-03-05 12:57:07.0',3,4,'Prueba'),
+	 (102,200,1500,'PENDING','2021-03-05 19:30:44.0',3,4,'Prueba'),
+	 (104,201,1200,'PENDING','2021-03-05 19:35:52.0',3,4,'Prueba'),
+	 (103,202,1300,'PENDING','2021-03-05 19:36:59.0',2,4,'Prueba'),
+	 (102,200,1400,'PENDING','2021-03-05 19:37:05.0',1,4,'Prueba'),
+	 (104,200,1100,'PENDING','2021-03-05 19:38:16.0',1,4,'Prueba'),
+	 (103,201,1200,'PENDING','2021-03-05 19:39:17.0',1,4,'Prueba'),
+	 (102,203,800,'PENDING','2021-03-05 19:42:27.0',1,4,'Prueba'),
+	 (101,204,1800,'PENDING','2021-03-05 19:50:48.0',1,4,'Prueba');
 ```
 
 ## Crear el connector MySQL >> Connector >> Kafka 
 ```sql
-CREATE SOURCE CONNECTOR `jdbc-connector` WITH("connector.class"='io.confluent.connect.jdbc.JdbcSourceConnector', "connection.url"='jdbc:mysql://172.17.0.1:3306/ptsmock', "mode"='incrementing', "topic.prefix"='jdbc_', "table.whitelist"='user', "key"='email', "connection.user"='ptsmock', "connection.password"='' );
+CREATE SOURCE CONNECTOR `jdbc-connector-transactions` WITH("connector.class"='io.confluent.connect.jdbc.JdbcSourceConnector', "connection.url"='jdbc:mysql://172.17.0.1:3306/ptsmock', "mode"='incrementing', "topic.prefix"='jdbc_', "table.whitelist"='transactions', "key"='beneficiaryId', "connection.user"='ptsmock', "connection.password"='ptsmock' );
 ```
 > Para connectarse al ksqldb-cli con docker se puede usar el siguiente comando: 
 ``` docker-compose exec ksqldb-cli ksql http://ksqldb-server:8088 ```
 
 ### Chequear el nuevo topico
 ```shell
-print 'jdbc-user' from beginning;
+print 'jdbc_transactions' from beginning;
 ```
 
 ## Crear un conector de salida para influxdb
 ```sql
-CREATE SINK CONNECTOR SINK_INFLUX_01 WITH (
-        'connector.class'               = 'io.confluent.influxdb.InfluxDBSinkConnector',
-        'value.converter'               = 'org.apache.kafka.connect.json.JsonConverter',
-        'topics'                        = 'parser_user_schema',
-        'influxdb.url'                  = 'http://influxdb:8086',
-        'influxdb.db'                   = 'adaptor_pts',
-        'measurement.name.format'       = 'metrics',
-        'key.converter.schemas.enable'  = 'false',
-        'value.converter.schemas.enable'= 'true',
-        'schemas.enable'                = 'false'
-  );
+CREATE SINK CONNECTOR SINK_INFLUX_TX WITH (
+    'connector.class'               = 'io.confluent.influxdb.InfluxDBSinkConnector',
+    'topics'                        = 'tx_influxdb',
+    'influxdb.url'                  = 'http://influxdb:8086',
+    'influxdb.db'                   = 'adaptor_pts',
+    'measurement.name.format'       = 'tx',
+    'event.time.fieldname'          = 'creationDate'
+    'value.converter'               = 'org.apache.kafka.connect.json.JsonConverter',
+    'key.converter'                 = 'org.apache.kafka.connect.json.JsonConverter',
+    'key.converter.schemas.enable'  = false,
+    'value.converter.schemas.enable'= false
+);
 ```
 
 ## Comandos útiles
 
 ### Dropear un connector
 ```shell
-drop connector 'jdbc-user';
+drop connector 'jdbc_transactions';
 ```
 
 ### Stopear todos los servicios
 ```shell
-docker-compose -f docker-compose-cp-community.yml down
+docker-compose --profile all down
 ```
 
+# query para dashboard en Grafana
+SELECT sum("amount") FROM "autogen"."tx" WHERE ("SERVICE" = '1') AND time >= now() - 2d GROUP BY time(1d) fill(0)
