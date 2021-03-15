@@ -177,6 +177,48 @@ services:
       - warehouse
       - all
 
+# PTS
+  adaptor-pts:
+    image: 193636153916.dkr.ecr.us-east-2.amazonaws.com/pts-full:1.50.23
+    ports:
+      - 8080:8080
+      - 9990:9990
+    depends_on: 
+      - oracle
+    environment:
+      FE_DB_DRIVER: oracle
+      FE_DB_USER: system
+      FE_DB_PSW: Prueba123
+      FE_DB_URL: jdbc:oracle:thin:@oracle:1521/XE
+
+      CM_DB_DRIVER: oracle
+      CM_DB_USER: system
+      CM_DB_PSW: Prueba123
+      CM_DB_URL: jdbc:oracle:thin:@oracle:1521/XE
+
+      SYS_REPO_DB_DRIVER: oracle
+      SYS_REPO_DB_URL: jdbc:oracle:thin:@oracle:1521/XE
+      SYS_REPO_DB_USER: system
+      SYS_REPO_DB_PSW: Prueba123
+    profiles:
+      - pts
+  
+  oracle:
+    container_name: oracle
+    image: oracle/database:18.4.0-xe
+    ports:
+      - 1521:1521
+      - 5500:5500
+    volumes: 
+      - /home/manuel/.oracle_xe_oradata/:/opt/oracle/oradata
+    environment: 
+      ORACLE_PWD: Prueba123
+      ORACLE_CHARACTERSET: UTF8
+    profiles:
+      - pts
+    
+
+
 volumes:
   influxdb-storage:
   chronograf-storage:
