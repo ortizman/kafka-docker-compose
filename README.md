@@ -155,7 +155,7 @@ INSERT INTO ptsmock.transactions (beneficiaryId,originId,amount,status,creationD
 
 ### Iniciar el cliente de KSQLDB
 ```shell
-docker-compose -f docker-compose-cp-community.yml exec ksqldb-cli ksql http://ksqldb-server:8088
+docker-compose exec ksqldb-cli ksql http://ksqldb-server:8088
 ```
 
 ### Crear el connector MySQL -> Kafka 
