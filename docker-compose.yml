@@ -170,19 +170,19 @@ services:
       - oracle
     environment:
       FE_DB_DRIVER: oracle
-      FE_DB_USER: system
-      FE_DB_PSW: Prueba123
+      FE_DB_USER: PTS_RELEASE
+      FE_DB_PSW: Release2020
       FE_DB_URL: jdbc:oracle:thin:@oracle:1521/XE
 
       CM_DB_DRIVER: oracle
-      CM_DB_USER: system
-      CM_DB_PSW: Prueba123
+      CM_DB_USER: PTS_RELEASE
+      CM_DB_PSW: Release2020
       CM_DB_URL: jdbc:oracle:thin:@oracle:1521/XE
 
       SYS_REPO_DB_DRIVER: oracle
       SYS_REPO_DB_URL: jdbc:oracle:thin:@oracle:1521/XE
-      SYS_REPO_DB_USER: system
-      SYS_REPO_DB_PSW: Prueba123
+      SYS_REPO_DB_USER: PTS_RELEASE
+      SYS_REPO_DB_PSW: Release2020
     profiles:
       - pts
       - all
