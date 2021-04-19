@@ -162,7 +162,7 @@ services:
 
 # PTS
   adaptor-pts:
-    image: 193636153916.dkr.ecr.us-east-2.amazonaws.com/pts-full:1.50.23
+    image: 193636153916.dkr.ecr.us-east-2.amazonaws.com/pts-full:1.50.23_kafka-dsn
     ports:
       - 8080:8080
       - 9990:9990
@@ -185,6 +185,7 @@ services:
       SYS_REPO_DB_PSW: Prueba123
     profiles:
       - pts
+      - all
   
   oracle:
     container_name: oracle
@@ -199,9 +200,8 @@ services:
       ORACLE_CHARACTERSET: UTF8
     profiles:
       - pts
+      - all
     
-
-
 volumes:
   influxdb-storage:
   chronograf-storage:
