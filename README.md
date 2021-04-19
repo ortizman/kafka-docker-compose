@@ -1,4 +1,4 @@
-# Construir un nuevo connect (usando Docker)
+# Como Construir un nuevo kafka connect (usando Docker)
 
 1. Extender la imagen base de docker connector con el nuevo connector
    Ej:
@@ -20,26 +20,55 @@
     ```shell
     docker build . -t mysql-connect:1.0.2
     ```
+ 
+## Connectores para la PoC
+Con el proposito de ejecutar una PoC, se construyo una imagen docker con dos connectores:
+* mysql
+* influxDB
+
+y se subió a docker hub:
+https://hub.docker.com/repository/docker/ortizman/kafka-connect
 
 
 # Deployment
 
-## Local
+### Local
 
 Todos los servicios estan construidos sobre Docker. 
 Usando la herramienta __docker-compose__ se puede levantar un ambiente local (o en cualquier servidor con docker).
 
 ### Levantar los servicios esensiales del DataLake
+El docker-compose esta construido sobre perfiles para facilitar la carga de diferentes conjuntos de servicios.
+
+**Perfiles:**
 
 ```shell
 docker-compose --context default --profile datalake up -d
 ```
-
-### Levantar todos los servicios (excepto PTS)
+* datalake (Levanta solo lo esencial del datalake)
+  * zookeeper
+  * broker (Apache Kafka)
+  * connectors
+  * ksqldb-server
 
 ```shell
 docker-compose --context default --profile all up -d
 ```
+* pts (solo levanta PTS)
+  * Oracle 18c XE
+  * pts-full
+
+```shell
+docker-compose --context default --profile warehouse up -d
+```
+* warehouse (levanta lo necesario para trabajar influxdb)
+  * grafana
+  * influxdb
+
+```shell
+docker-compose --context default --profile all up -d
+```
+* all (levanta todos los servicios)
 
 ### Levantar solo PTS
 
@@ -53,7 +82,7 @@ docker-compose --context default --profile pts up -d
 docker-compose --context default down
 ```
 
-## AWS ECS
+## Deploy en AWS ECS
 Existe la posibilidad de deployar estos servicios usando ECS como plataforma. Los siguientes links pueden servir de guia para cumplir los pre-requisitos:
 * https://docs.docker.com/cloud/ecs-integration/
 * https://aws.amazon.com/blogs/containers/deploy-applications-on-amazon-ecs-using-docker-compose/
@@ -73,19 +102,18 @@ docker context create ecs aws-ecs
 > AWS environment variables
 ```
 
-donde se debe seleccionar el modo en que se proveerá las cerdenciales de AWS.
-
+Se debe seleccionar el modo en que se proveerá las cerdenciales de AWS.
 
 ### Desplegar los servicios
 
-De forma similar a como se opera con el comando docker-compose, se puede desplegar usando el comando __ docker compose __. A continuación un ejemplo:
+De forma similar a como se opera con el comando docker-compose, se puede desplegar usando el comando __docker compose__ (sin guion). A continuación un ejemplo:
 
 ```shell
-docker compose --context aws-ecs up connect 
+docker compose --context aws-ecs --profile pts up connect 
 ```
 > IMPORTANTE: se debe especificar el contexto `aws-ecs` en cada comando
 
-El comando anterior creará un nuevo cluster (si aún no existe) y desplegará el container `connect` con todas sus dependencias (Kafka Broker y Zookeeper) usando AWS ECS.
+El comando anterior creará un nuevo cluster (si aún no existe) y desplegará el servicio `connect` con todas sus dependencias (Kafka Broker y Zookeeper) usando AWS ECS.
 
 ### Chequear los servicios levantados
 
@@ -109,9 +137,9 @@ docker compose --context aws-ecs down
 
 # Demo
 
-Se creará una base de datos con una tabla y datos mocks. Se extraeran los datos de esa tabla usando el conector JDBC de Kafka Connect y se enviara a un tópico. Luego, usando una expresion SQL en KSQLDB se transforaran los datos para posteriormente ser escritos en otro tópico. Nuevamente, usando un conector de salida, se consumieran esos datos para escribirlos en influxdb y usar Grafana para crear nuestro dashboard.
+Se creará una base de datos con una tabla y datos mocks. Se extraeran los datos de esa tabla usando el conector JDBC de Kafka Connect y se enviara a un tópico. Luego, usando una expresion SQL en KSQLDB se transforaran los datos para posteriormente ser escritos en otro tópico. Nuevamente, usando un conector de salida, se consumiran esos datos para escribirlos en influxdb y usar Grafana para crear nuestro dashboard.
 
-## Crear Base de datos relacional de __ejemplo__
+## Crear Base de datos relacional de ejemplo
 
 ### DDL BBDD
 ```sql
@@ -135,7 +163,7 @@ CREATE TABLE `transactions` (
 ) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8;
 ```
 
-### Insert de datos
+### Insert de los datos
 ```sql
 INSERT INTO ptsmock.transactions (beneficiaryId,originId,amount,status,creationDate,serviceId,channelId,reference) VALUES
 	 (101,200,100,'PENDING','2021-03-05 12:57:06.0',3,4,'Prueba'),
@@ -151,14 +179,16 @@ INSERT INTO ptsmock.transactions (beneficiaryId,originId,amount,status,creationD
 	 (101,204,1800,'PENDING','2021-03-05 19:50:48.0',1,4,'Prueba');
 ```
 
+## Curado de los datos
+
 > Para los siguientes comandos es necesario crear una sesión en KSQLDB
 
-### Iniciar el cliente de KSQLDB
+### Iniciar el cliente de KSQLDB-cli
 ```shell
 docker-compose exec ksqldb-cli ksql http://ksqldb-server:8088
 ```
 
-### Crear el connector MySQL -> Kafka 
+### Configurar el connector MySQL -> Kafka 
 ```sql
 CREATE SOURCE CONNECTOR `jdbc-connector-transactions` WITH(
     "connector.class"     = 'io.confluent.connect.jdbc.JdbcSourceConnector',
@@ -171,18 +201,23 @@ CREATE SOURCE CONNECTOR `jdbc-connector-transactions` WITH(
     "connection.password" = 'ptsmock' 
   );
 ```
+> Si el comando anterior fue exitoso, se debería crear un nuevo topic de kafka con el nombre *jdbc_transactions*
 
 ### Chequear el nuevo topico
+El siguiente comando imprime en consola los mensajes del topic
+
 ```shell
 print 'jdbc_transactions' from beginning;
 ```
 
-# setear lectura de los topicos desde el principio
+### setear lectura de los topicos desde el principio
 SET 'auto.offset.reset' = 'earliest';
 
 > El comando anterior indicar a Kafka que los nuevos clientes debe comenzar a consumir los mensajes desde el comienzo del tópico
 
-# crear stream de transactions en ksqldb
+### crear stream de transactions en ksqldb
+El siguiente comando crea un stream en KSQLDB. La fuente del stream es el topico *jdbc_transactions*. Cuando creamos el stream, podemos elejir que atributos mapear, sus tipos y formato.
+
 CREATE STREAM RAW_TRANSACTIONS (
     schema struct<type string, fields array<struct<type string, field string, optional boolean, name string, version int>>, optional boolean, name string>, 
     payload struct<id int, beneficiaryId int, originId int, amount int, status string, creationDate bigint, serviceId string, channelId string, reference string> 
@@ -190,14 +225,17 @@ CREATE STREAM RAW_TRANSACTIONS (
 
 El anterior comando crea un __stream__ de nombre `RAW_TRANSACTIONS` en KSQLDB. El origen del __stream__ es el tópico `jdbc_transactions`. Los datos en el stream serán los especificados.
 
-# Mapear transacciones para cargarlas en influxdb
+### Mapear transacciones para cargarlas en influxdb
+
 CREATE STREAM tx_schemaless WITH (kafka_topic='tx_influxdb') as 
   SELECT struct(service:=payload->serviceId, channel:=payload->channelId) as "tags", payload->amount as "amount", payload->creationDate as "creationDate"
 from RAW_TRANSACTIONS emit changes;
 
-El stream anterior procesa los datos y los carga en un nuevo tópico de nombre `tx_influxdb`.
+El stream anterior procesa los datos del stream *RAW_TRANSACTIONS* y los carga en un nuevo tópico de nombre `tx_influxdb`.
 
-## Crear un conector de salida para influxdb
+### Crear un conector de salida para influxdb
+A continuación, se crea un kafka connect de salida. Toma los datos de un topico (*tx_influxdb*) y los inserta en influxDB
+
 ```sql
 CREATE SINK CONNECTOR SINK_INFLUX_TX WITH (
     'connector.class'               = 'io.confluent.influxdb.InfluxDBSinkConnector',
@@ -214,6 +252,7 @@ CREATE SINK CONNECTOR SINK_INFLUX_TX WITH (
 ```
 
 # Grafana Dashboard
+
 ```json
 {
   "aliasColors": {},
