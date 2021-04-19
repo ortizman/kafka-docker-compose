@@ -43,6 +43,36 @@ CREATE SINK CONNECTOR SINK_INFLUX_TX WITH (
     'value.converter.schemas.enable'= false
 );
 
+### Generar TX dummy con Kafkacat
+docker run -v /home/manuel/desarrollo/2inn/kafka-docker/test/pts-tx-event-dummy.json:/data/tx-dummy.json -i --network kafka-docker_default confluentinc/cp-kafkacat kafkacat -b broker:29092 -t test -D*** -P -l /data/tx-dummy.json
+
+## Create Stream PTS_TX_ENTITIES
+
+create stream PTS_TX_ENTITIES (
+  EventData STRUCT<transactionId STRING, originationHost STRING, serviceId STRING, channelId STRING, trxType STRING, currency STRING, totalAmount STRING, status STRING, initialTime STRING, duration STRING, entities ARRAY <STRUCT<entityId STRING, initialTime STRING, duration DOUBLE, resultCode STRING, resultDesc STRING>>> ) 
+with (KEY_FORMAT='NONE', WRAP_SINGLE_VALUE=true, VALUE_FORMAT='JSON', KAFKA_TOPIC='test');
+
+### Stream con entidades de la TX como filas
+
+create stream TX_TO_INFLUX(kafka_topic="pepe") as 
+select 
+  EXPLODE(EventData->entities)->entityId as entityId, 
+  EXPLODE(EventData->entities)->initialTime as entityInitialTime,  
+  EXPLODE(EventData->entities)->duration as entityDuration , 
+  EXPLODE(EventData->entities)->resultCode as resultCode, 
+  EXPLODE(EventData->entities)->resultDesc as resultDesc, 
+  eventData->transactionId as transactionId,
+  eventData->originationHost as originationHost,
+  eventData->serviceId as serviceId,
+  eventData->channelId as channelId,
+  eventData->trxType as trxType,
+  eventData->currency as currency,
+  eventData->totalAmount as totalAmount,
+  eventData->status as status,
+  eventData->initialTime as initialTime,
+  eventData->duration as duration
+from PTS_TX_ENTITIES emit changes;
+
 
 # Grafana Dashboard
 
@@ -177,33 +207,3 @@ CREATE SINK CONNECTOR SINK_INFLUX_TX WITH (
   "timeShift": null,
   "datasource": null
 }
-
-### Generar TX dummy con Kafkacat
-docker run -v /home/manuel/desarrollo/2inn/kafka-docker/test/pts-tx-event-dummy.json:/data/tx-dummy.json -i --network kafka-docker_default confluentinc/cp-kafkacat kafkacat -b broker:29092 -t test -D*** -P -l /data/tx-dummy.json
-
-## Create Stream PTS_TX_ENTITIES
-
-create stream PTS_TX_ENTITIES (
-  EventData STRUCT<transactionId STRING, originationHost STRING, serviceId STRING, channelId STRING, trxType STRING, currency STRING, totalAmount STRING, status STRING, initialTime STRING, duration STRING, entities ARRAY <STRUCT<entityId STRING, initialTime STRING, duration DOUBLE, resultCode STRING, resultDesc STRING>>> ) 
-with (KEY_FORMAT='NONE', WRAP_SINGLE_VALUE=true, VALUE_FORMAT='JSON', KAFKA_TOPIC='test');
-
-### Stream con entidades de la TX como filas
-
-create stream TX_TO_INFLUX(kafka_topic="pepe") as 
-select 
-  EXPLODE(EventData->entities)->entityId as entityId, 
-  EXPLODE(EventData->entities)->initialTime as entityInitialTime,  
-  EXPLODE(EventData->entities)->duration as entityDuration , 
-  EXPLODE(EventData->entities)->resultCode as resultCode, 
-  EXPLODE(EventData->entities)->resultDesc as resultDesc, 
-  eventData->transactionId as transactionId,
-  eventData->originationHost as originationHost,
-  eventData->serviceId as serviceId,
-  eventData->channelId as channelId,
-  eventData->trxType as trxType,
-  eventData->currency as currency,
-  eventData->totalAmount as totalAmount,
-  eventData->status as status,
-  eventData->initialTime as initialTime,
-  eventData->duration as duration
-from PTS_TX_ENTITIES emit changes;
