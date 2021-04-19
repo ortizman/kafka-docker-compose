@@ -193,7 +193,7 @@ services:
       - 1521:1521
       - 5500:5500
     volumes: 
-      - /home/manuel/.oracle_xe_oradata/:/opt/oracle/oradata
+      - /home/manuel/.new_oradata/:/opt/oracle/oradata
     environment: 
       ORACLE_PWD: Prueba123
       ORACLE_CHARACTERSET: UTF8
