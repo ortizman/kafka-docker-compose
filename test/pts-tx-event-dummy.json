@@ -1,0 +1,81 @@
+{
+    "originationHost": "originationHost",
+    "eventName": "eventName",
+    "eventVrs": "eventVrs",
+    "eventData": {
+        "transactionId": "tx-id-123",
+        "originationHost": "localhost:1234",
+        "serviceId": "prueba_id",
+        "channelId": "App_Mobile",
+        "trxType": "TYPE_ONE",
+        "currency": "USD",
+        "totalAmount": "15",
+        "status": "DONE",
+        "initialTime": 1616959759400,
+        "duration": "80",
+        "entities": [
+            {
+                "entityId": "10",
+                "initialTime": 1616959759411,
+                "duration": 20,
+                "resultCode": 200,
+                "resultDesc": "OK"
+            },
+            {
+                "entityId": "11",
+                "initialTime": 1616959759511,
+                "duration": 32,
+                "resultCode": 200,
+                "resultDesc": "OK"
+            },
+            {
+                "entityId": "15",
+                "initialTime": 1616959769411,
+                "duration": 26,
+                "resultCode": 200,
+                "resultDesc": "OK"
+            }
+        ]
+    }
+}
+***
+{
+    "originationHost": "originationHost",
+    "eventName": "eventName",
+    "eventVrs": "eventVrs",
+    "eventData": {
+        "transactionId": "tx-id-123",
+        "originationHost": "localhost:1234",
+        "serviceId": "prueba_id",
+        "channelId": "App_Mobile",
+        "trxType": "TYPE_ONE",
+        "currency": "USD",
+        "totalAmount": "15",
+        "status": "DONE",
+        "initialTime": 1616959759405,
+        "duration": "80",
+        "entities": [
+            {
+                "entityId": "10",
+                "initialTime": 1616959759411,
+                "duration": 20,
+                "resultCode": 200,
+                "resultDesc": "OK"
+            },
+            {
+                "entityId": "11",
+                "initialTime": 1616959759511,
+                "duration": 32,
+                "resultCode": 200,
+                "resultDesc": "OK"
+            },
+            {
+                "entityId": "13",
+                "initialTime": 1616959769411,
+                "duration": 26,
+                "resultCode": 200,
+                "resultDesc": "OK"
+            }
+        ]
+    }
+}
