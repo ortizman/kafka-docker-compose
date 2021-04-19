@@ -32,10 +32,29 @@ https://hub.docker.com/repository/docker/ortizman/kafka-connect
 
 # Deployment
 
-### Local
+## Local
 
 Todos los servicios estan construidos sobre Docker. 
 Usando la herramienta __docker-compose__ se puede levantar un ambiente local (o en cualquier servidor con docker).
+
+### Pre-requisitos
+- Inicializar la base de datos Oracle XE la primera vez que se use como container. 
+```shell
+docker run --rm --name oracle-18xe -p 1521:1521 -p 5500:5500 -e ORACLE_PWD=Prueba123 -e ORACLE_CHARACTERSET=UTF8 -v /home/manuel/.oracle_xe_oradata/:/opt/oracle/oradata oracle/database:18.4.0-xe
+```
+
+- Crear el usuario PTS_RELEASE en Oracle
+```sql
+alter session set "_ORACLE_SCRIPT"=true;
+
+ALTER SESSION SET CONTAINER = XEPDB1;
+
+CREATE TABLESPACE TBS_PTS_RELEASE DATAFILE '/opt/oracle/oradata/TBS_PTS_RELEASE.DBF' SIZE 512m AUTOEXTEND ON;
+
+CREATE USER PTS_RELEASE IDENTIFIED BY TU_PassWord DEFAULT TABLESPACE TBS_PTS_RELEASE;
+
+GRANT ALL PRIVILEGES TO PTS_RELEASE;
+```
 
 ### Levantar los servicios esensiales del DataLake
 El docker-compose esta construido sobre perfiles para facilitar la carga de diferentes conjuntos de servicios.
