@@ -42,39 +42,39 @@ El docker-compose esta construido sobre perfiles para facilitar la carga de dife
 
 **Perfiles:**
 
+Datalake
 ```shell
 docker-compose --context default --profile datalake up -d
 ```
-* datalake (Levanta solo lo esencial del datalake)
-  * zookeeper
-  * broker (Apache Kafka)
-  * connectors
-  * ksqldb-server
+ Levanta solo lo esencial del datalake
+  - zookeeper
+  - broker (Apache Kafka)
+  - connectors
+  - ksqldb-server
 
-```shell
-docker-compose --context default --profile all up -d
-```
-* pts (solo levanta PTS)
-  * Oracle 18c XE
-  * pts-full
 
-```shell
-docker-compose --context default --profile warehouse up -d
-```
-* warehouse (levanta lo necesario para trabajar influxdb)
-  * grafana
-  * influxdb
-
-```shell
-docker-compose --context default --profile all up -d
-```
-* all (levanta todos los servicios)
-
-### Levantar solo PTS
-
+PTS
 ```shell
 docker-compose --context default --profile pts up -d
 ```
+Solo levanta PTS
+  * Oracle 18c XE
+  * pts-full
+
+Warehouse
+```shell
+docker-compose --context default --profile warehouse up -d
+```
+Levanta lo necesario para trabajar influxdb
+  * grafana
+  * influxdb
+
+All
+```shell
+docker-compose --context default --profile all up -d
+```
+Levanta todos los servicios
+
 
 ### Bajar todos los servicios
 
