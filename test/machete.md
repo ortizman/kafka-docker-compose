@@ -1,35 +1,45 @@
-# Levantar todo el ambiente
+## Levantar todo el ambiente
+```shell
 docker-compose --profile all up -d
-
-# Bajar el ambiente
+```
+## Bajar el ambiente
+```shell
 docker-compose --profile all down
-
-# Ver logs del connector (similar para otros)
+```
+## Ver logs del connector (similar para otros)
+```shell
 docker-compose logs -f connect
-
-# Ejecutar KSQLDB-CLI (crear connectores, streams, tablas, etc)
+```
+## Ejecutar KSQLDB-CLI (crear connectores, streams, tablas, etc)
+```shell
 docker-compose exec ksqldb-cli ksql http://ksqldb-server:8088 
-
-# ingresar a influxdb
+```
+## ingresar a influxdb
+```shell
 docker-compose exec influxdb influx
+```
 
-
-# crear conectores jdbc mysql
+## crear conectores jdbc mysql
+```sql
 CREATE SOURCE CONNECTOR `jdbc-connector-transactions` WITH("connector.class"='io.confluent.connect.jdbc.JdbcSourceConnector', "connection.url"='jdbc:mysql://172.17.0.1:3306/ptsmock', "mode"='incrementing', "topic.prefix"='jdbc_', "table.whitelist"='transactions', "key"='beneficiaryId', "connection.user"='ptsmock', "connection.password"='ptsmock' );
-
-# setear lectura de los topicos desde el principio
+```
+## setear lectura de los topicos desde el principio
+```sql
 SET 'auto.offset.reset' = 'earliest';
+```
 
-
-# crear stream de transactions en ksqldb
+## crear stream de transactions en ksqldb
+```sql
 CREATE STREAM RAW_TRANSACTIONS (schema struct<type string, fields array<struct<type string, field string, optional boolean, name string, version int>>, optional boolean, name string>, payload struct<id int, beneficiaryId int, originId int, amount int, status string, creationDate bigint, serviceId string, channelId string, reference string> ) with (kafka_topic='jdbc_transactions', value_format='JSON');
+```
 
-
-# Mapear Transacciones para cargarlas en influxdb
+## Mapear Transacciones para cargarlas en influxdb
+```sql
 create stream tx_schemaless with (kafka_topic='tx_influxdb') as select struct(service:=payload->serviceId, channel:=payload->channelId) as "tags", payload->amount as "amount", payload->creationDate as "creationDate" from RAW_TRANSACTIONS emit changes;
+```
 
-
-# crear los conectores de kafka streams a influxdb
+## crear los conectores de kafka streams a influxdb
+```sql
 CREATE SINK CONNECTOR SINK_INFLUX_TX WITH (
     'connector.class'               = 'io.confluent.influxdb.InfluxDBSinkConnector',
     'topics'                        = 'tx_influxdb',
@@ -42,18 +52,20 @@ CREATE SINK CONNECTOR SINK_INFLUX_TX WITH (
     'key.converter.schemas.enable'  = false,
     'value.converter.schemas.enable'= false
 );
+```
 
 ### Generar TX dummy con Kafkacat
+```shell
 docker run -v /home/manuel/desarrollo/2inn/kafka-docker/test/pts-tx-event-dummy.json:/data/tx-dummy.json -i --network kafka-docker_default confluentinc/cp-kafkacat kafkacat -b broker:29092 -t test -D*** -P -l /data/tx-dummy.json
-
+```
 ## Create Stream PTS_TX_ENTITIES
-
+```sql
 create stream PTS_TX_ENTITIES (
   EventData STRUCT<transactionId STRING, originationHost STRING, serviceId STRING, channelId STRING, trxType STRING, currency STRING, totalAmount STRING, status STRING, initialTime STRING, duration STRING, entities ARRAY <STRUCT<entityId STRING, initialTime STRING, duration DOUBLE, resultCode STRING, resultDesc STRING>>> ) 
 with (KEY_FORMAT='NONE', WRAP_SINGLE_VALUE=true, VALUE_FORMAT='JSON', KAFKA_TOPIC='test');
-
+```
 ### Stream con entidades de la TX como filas
-
+```sql
 create stream TX_TO_INFLUX(kafka_topic="pepe") as 
 select 
   EXPLODE(EventData->entities)->entityId as entityId, 
@@ -72,10 +84,10 @@ select
   eventData->initialTime as initialTime,
   eventData->duration as duration
 from PTS_TX_ENTITIES emit changes;
+```
 
-
-# Grafana Dashboard
-
+## Grafana Dashboard
+```json
 {
   "aliasColors": {},
   "dashLength": 10,
@@ -207,3 +219,4 @@ from PTS_TX_ENTITIES emit changes;
   "timeShift": null,
   "datasource": null
 }
+```

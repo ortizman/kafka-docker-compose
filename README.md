@@ -23,7 +23,7 @@
  
 ## Connectores para la PoC
 Con el proposito de ejecutar una PoC, se construyo una imagen docker con dos connectores:
-* mysql
+* mysql (jdbc)
 * influxDB
 
 y se subió a docker hub:
@@ -225,31 +225,36 @@ CREATE SOURCE CONNECTOR `jdbc-connector-transactions` WITH(
 ### Chequear el nuevo topico
 El siguiente comando imprime en consola los mensajes del topic
 
-```shell
+```sql
 print 'jdbc_transactions' from beginning;
 ```
 
 ### setear lectura de los topicos desde el principio
+```sql
 SET 'auto.offset.reset' = 'earliest';
+```
 
 > El comando anterior indicar a Kafka que los nuevos clientes debe comenzar a consumir los mensajes desde el comienzo del tópico
 
 ### crear stream de transactions en ksqldb
 El siguiente comando crea un stream en KSQLDB. La fuente del stream es el topico *jdbc_transactions*. Cuando creamos el stream, podemos elejir que atributos mapear, sus tipos y formato.
 
+```sql
 CREATE STREAM RAW_TRANSACTIONS (
     schema struct<type string, fields array<struct<type string, field string, optional boolean, name string, version int>>, optional boolean, name string>, 
     payload struct<id int, beneficiaryId int, originId int, amount int, status string, creationDate bigint, serviceId string, channelId string, reference string> 
   ) with (kafka_topic='jdbc_transactions', value_format='JSON');
+```
 
 El anterior comando crea un __stream__ de nombre `RAW_TRANSACTIONS` en KSQLDB. El origen del __stream__ es el tópico `jdbc_transactions`. Los datos en el stream serán los especificados.
 
 ### Mapear transacciones para cargarlas en influxdb
 
+```sql
 CREATE STREAM tx_schemaless WITH (kafka_topic='tx_influxdb') as 
   SELECT struct(service:=payload->serviceId, channel:=payload->channelId) as "tags", payload->amount as "amount", payload->creationDate as "creationDate"
 from RAW_TRANSACTIONS emit changes;
-
+```
 El stream anterior procesa los datos del stream *RAW_TRANSACTIONS* y los carga en un nuevo tópico de nombre `tx_influxdb`.
 
 ### Crear un conector de salida para influxdb
